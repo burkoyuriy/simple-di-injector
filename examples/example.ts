@@ -1,4 +1,3 @@
-import { Inject } from "../lib/inject";
 import { Injectable } from "../lib/injectable";
 import { Injector } from "../lib/injector";
 
@@ -13,28 +12,6 @@ async function bootstrap(){
     Application, 
     LoggerService, 
     ConfigService,
-    
-    {
-      provide: 'SOME_SERVICE_CLASS',
-      useClass: SomeOtherService
-    },
-
-    {
-      provide: 'SOME_FACTORY',
-      useFactory: (configService: ConfigService) => {
-        return new SomeOtherService()
-      },
-      inject: [ConfigService]
-    }
-  )
-
-  childInjector.addProvider(
-    {
-      provide: 'SOME_VALUE',
-      useValue: {
-        test: 10
-      }
-    }
   )
 
   await injector.resolve(Application)
@@ -46,11 +23,9 @@ class Application{
   constructor(
     private logger: LoggerService,
     private config: ConfigService,
-    @Inject('SOME_VALUE') someValue: number,
-    @Inject('SOME_SERVICE_CLASS') someServiceClass: SomeOtherService,
-    @Inject('SOME_FACTORY') someFactory: SomeOtherService
   ){
-    // some logic
+    this.logger.info('[application]', `Application inited with address: ${this.config.get('host')}:${this.config.get('port')}`)
+    // some other logic
   }
 
   async setup(){
@@ -61,13 +36,35 @@ class Application{
 
 @Injectable()
 class LoggerService{
+  constructor(private config: ConfigService){}
+
   async setup(){
     // will be called when the instance is created 
-    console.log('Setup LoggerService')
+    console.log(`Setup LoggerService. LogLevel: ${this.config.get<string>('logLevel')}, LoggerErrorsFile: ${this.config.get<string>('loggerErrorsFile')}`)
+  }
+
+  info(target: string, msg: string){
+    console.log(msg)
   }
 }
 
 @Injectable()
-class ConfigService{}
+class ConfigService{
+  private config: Map<string, any> = new Map()
 
-class SomeOtherService{}
+  setup(){
+    // will be called when the instance is created 
+    this.set('loggerErrorsFile', 'error.log')
+    this.set('logLevel', 'info')
+    this.set('host', 'localhost')
+    this.set('port', 8080)
+  }
+
+  public set(key: string, value: any): void{
+    this.config.set(key, value)
+  }
+
+  public get<T=any>(key: string): T{
+    return this.config.get(key)
+  }
+}
