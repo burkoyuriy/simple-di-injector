@@ -72,7 +72,7 @@ class Application{
   constructor(
     private config: ConfigService, 
     private logger: LoggerService, 
-    private @Inject('SOME_VALUE') someValue: any
+    @Inject('SOME_VALUE') private someValue: any
   ){}
 
   async setup(){
